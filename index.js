@@ -28,6 +28,9 @@ require('./utils/auth/strategies/oauth');
 //para usar la estragia OAuth con twitter
 require('./utils/auth/strategies/twitter');
 
+//para usar la estragia OAuth con facebook
+require('./utils/auth/strategies/facebook');
+
 const THIRTY_DAYS_IN_SEC = 2592000;
 const TWO_HOURS_IN_SEC = 7200;
 
@@ -203,10 +206,34 @@ app.get("/auth/twitter/callback", passport.authenticate("twitter",{session: fals
         })
 
         res.status(200).json({user})
-
     }
+);
 
-)
+app.get("/auth/facebook", passport.authenticate("facebook", {
+        scope: ["email"]
+    })
+);
+  
+app.get(
+    "/auth/facebook/callback",
+    passport.authenticate("facebook", { session: false }),
+    function(req, res, next) {
+      if (!req.user) {
+        next(boom.unauthorized());
+      }
+  
+      const { token, ...user } = req.user;
+  
+      res.cookie("token", token, {
+        httpOnly: !config.dev,
+        secure: !config.dev
+      });
+  
+      res.status(200).json(user);
+    }
+  );
+
+
 
 app.listen(config.port,()=>{
     console.log(`El servidor esta escuchando en http://localhost:${config.port}` );
