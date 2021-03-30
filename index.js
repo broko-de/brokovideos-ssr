@@ -146,34 +146,33 @@ app.delete('/user-movies/:userMovieId',async function(req,res,next){
 
 //Endpoint que se encarga de iniciar el proceso de autenticacion con google
 app.get("/auth/google-oauth", 
-    //implementa passport con la strategia de google oauth y le especificamos los scopes que va a utilizar
+    //implementa passport con la strategia de google oauth y le especificamos los scopes que va a utilizar    
     passport.authenticate("google-oauth",{
-        scopes: ['email','profile','openid']
+        scope: ['email','profile','openid']
     })
 );
 
 //implementamos tambien nuestra ruta callback a la que la autenticación de google va a responder
-app.get("/auth/google-outh/callback", 
+app.get("/auth/google-oauth/callback", 
     //tambien especificamos que usaremos la estrategia de google, que la sessión sera false por no usar estados
     // y una funcion callback de rutas
-    passport.authenticate("google-oauth",{session: false},
-        function(req,res,next){
-            //verificamos que el usuario exista  de lo que nos devuelve google
-            if(!req.user){
-                next(boom.unauthorized());
-            }
-            //Si existe scamos el token y usuario de la petición
-            const {token, ...user} = req.user;
-
-            //creamos un cookie token que contendra el accessToken que recibimos.
-            res.cookie("token",token,{
-                httpOnly: !config.dev,
-                secure: !config.dev
-            });
-            res.status(200).json(user);
-
+    passport.authenticate("google-oauth",{session: false}),
+    function(req,res,next){
+        //verificamos que el usuario exista  de lo que nos devuelve google
+        if(!req.user){
+            next(boom.unauthorized());
         }
-    )
+        //Si existe scamos el token y usuario de la petición
+        const {token, ...user} = req.user;
+
+        //creamos un cookie token que contendra el accessToken que recibimos.
+        res.cookie("token",token,{
+            httpOnly: !config.dev,
+            secure: !config.dev
+        });
+        res.status(200).json(user);
+
+    }
 );
 
 app.listen(config.port,()=>{
