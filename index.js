@@ -1,5 +1,7 @@
 const express = require('express');
 const passport = require('passport');
+//para definir como manejamos la session para la autenticacion con Twitter
+const session = require('express-session');
 const boom = require('@hapi/boom');
 //Libreria para 
 const cookieParser = require('cookie-parser');
@@ -11,12 +13,20 @@ const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
+//implementamos la session con el secret que va a codificar
+app.use(session({secret: config.sessionSecret}));
+//para inicializar la session
+app.use(passport.initialize());
+app.use(passport.session());
 
 // para usar la estretegia Basic
 require('./utils/auth/strategies/basic')
 
 //para usar la estragia OAuth con google
 require('./utils/auth/strategies/oauth');
+
+//para usar la estragia OAuth con twitter
+require('./utils/auth/strategies/twitter');
 
 const THIRTY_DAYS_IN_SEC = 2592000;
 const TWO_HOURS_IN_SEC = 7200;
@@ -174,6 +184,29 @@ app.get("/auth/google-oauth/callback",
 
     }
 );
+
+//Ruta para hacer la conexión de login con twitter
+app.get("/auth/twitter", passport.authenticate("twitter"));
+
+//Ruta de callback una vez que twitter se conecto con exito
+app.get("/auth/twitter/callback", passport.authenticate("twitter",{session: false}),
+    function(req,res,next){
+        if(!req.user){
+            next(boom.unauthorized());
+        }
+
+        const {token, ...user} = req.user;
+
+        res.cookie("token", token,{
+            httpOnly: !config.dev,
+            secure: !config.dev
+        })
+
+        res.status(200).json({user})
+
+    }
+
+)
 
 app.listen(config.port,()=>{
     console.log(`El servidor esta escuchando en http://localhost:${config.port}` );
