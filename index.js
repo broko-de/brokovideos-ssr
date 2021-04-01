@@ -1,4 +1,5 @@
 const express = require('express');
+const helmet = require('helmet');
 const passport = require('passport');
 //para definir como manejamos la session para la autenticacion con Twitter
 const session = require('express-session');
@@ -12,6 +13,8 @@ const { config } = require('./config');
 const app = express();
 
 app.use(express.json());
+//USO DE HELMET CON SUS CONFIGURACIONES POR DEFECTO
+app.use(helmet());
 app.use(cookieParser());
 //implementamos la session con el secret que va a codificar
 app.use(session({secret: config.sessionSecret}));
